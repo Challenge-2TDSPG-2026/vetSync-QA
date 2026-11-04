@@ -1,0 +1,136 @@
+[
+  {
+    "codigo": "QA-S4-01",
+    "titulo": "Login rejeita campos obrigatorios vazios",
+    "objetivo": "Validar o tratamento de entrada invalida no login do tutor.",
+    "precondicao": "API VetSync acessivel; nenhuma conta e necessaria.",
+    "entrada": "POST /auth/login com {\"email\":\"\",\"senha\":\"\"}.",
+    "saida": "HTTP 400; nenhuma sessao ou token e criado.",
+    "passos": [
+      ["Enviar a requisicao POST /auth/login com email e senha vazios.", "Resposta HTTP 400."],
+      ["Conferir que a resposta nao inclui token de acesso.", "Nenhum token e retornado."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-02",
+    "titulo": "Login de tutor cadastrado abre a sessao",
+    "objetivo": "Validar autenticacao de uma conta real de tutor de testes.",
+    "precondicao": "Uma conta de tutor de testes ativa e conhecida pelo executor; nao registrar senha no Azure Boards.",
+    "entrada": "POST /auth/login com email e senha dessa conta; registrar o email de teste no ambiente de execucao.",
+    "saida": "HTTP 200; perfil TUTOR; email retornado igual ao informado; token nao vazio.",
+    "passos": [
+      ["Enviar POST /auth/login com a conta de tutor de testes.", "HTTP 200 e token nao vazio."],
+      ["Comparar email e perfil da resposta com os dados da conta.", "Email igual ao informado e perfil TUTOR."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-03",
+    "titulo": "Tutor cadastra pet com dados controlados",
+    "objetivo": "Validar o cadastro de pet vinculado ao tutor autenticado.",
+    "precondicao": "Executar QA-S4-02; manter o token do tutor para esta execucao.",
+    "entrada": "POST /pets com nmPet=QA Sprint 4 Pet, especie=CAO, raca=Poodle (Caniche), dtNascimento=2020-01-15, peso=5.2, sexo=M. Confirmar a raca em GET /pets/racas?especie=CAO antes do cadastro.",
+    "saida": "HTTP 201; nmPet=QA Sprint 4 Pet; sexo=M; data=2020-01-15; peso=5.2; idPet preenchido e idTutor igual ao tutor autenticado.",
+    "passos": [
+      ["Consultar o catalogo de racas para CAO e confirmar a raca escolhida.", "Raca escolhida consta no catalogo."],
+      ["Enviar POST /pets com o token do tutor e os dados informados.", "HTTP 201 e os campos da resposta correspondem aos dados enviados."],
+      ["Anotar o idPet gerado para os casos seguintes.", "idPet numerico preenchido."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-04",
+    "titulo": "Tutor consulta o pet cadastrado",
+    "objetivo": "Validar a consulta de dados do pet pelo tutor autorizado.",
+    "precondicao": "Executar QA-S4-03 e usar o idPet registrado.",
+    "entrada": "GET /pets/{idPet} com token do tutor de testes e idPet criado em QA-S4-03.",
+    "saida": "HTTP 200; idPet igual ao solicitado; nmPet=QA Sprint 4 Pet; sexo=M; data=2020-01-15.",
+    "passos": [
+      ["Enviar GET /pets/{idPet} com o token do tutor.", "HTTP 200."],
+      ["Conferir idPet, nome, sexo e data de nascimento.", "Valores iguais aos cadastrados em QA-S4-03."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-05",
+    "titulo": "Tutor atualiza o peso do pet",
+    "objetivo": "Validar a atualizacao e persistencia dos dados de um pet proprio.",
+    "precondicao": "Executar QA-S4-03 e usar o idPet registrado.",
+    "entrada": "PUT /pets/{idPet} com nmPet=QA Sprint 4 Pet, especie=CAO, raca igual a escolhida em QA-S4-03, dtNascimento=2020-01-15, peso=6.1, sexo=M.",
+    "saida": "HTTP 200; peso=6.1 na resposta e em GET /pets/{idPet}; demais campos mantidos.",
+    "passos": [
+      ["Enviar PUT /pets/{idPet} com o peso 6.1 e os demais campos preservados.", "HTTP 200 e peso 6.1 na resposta."],
+      ["Enviar GET /pets/{idPet} novamente.", "Peso persistido como 6.1 e demais campos preservados."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-06",
+    "titulo": "Sistema bloqueia consulta de pets sem autenticacao",
+    "objetivo": "Validar que a lista de pets exige sessao autenticada.",
+    "precondicao": "API VetSync acessivel; remover qualquer cabecalho Authorization.",
+    "entrada": "GET /pets sem token.",
+    "saida": "HTTP 401; dados de pets nao sao retornados.",
+    "passos": [
+      ["Enviar GET /pets sem cabecalho Authorization.", "HTTP 401."],
+      ["Conferir que a resposta nao contem lista de pets.", "Nenhum dado de pet e exibido."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-07",
+    "titulo": "Tutor consulta catalogo de tipos de evento",
+    "objetivo": "Validar o catalogo usado para agendamento de eventos de saude.",
+    "precondicao": "Executar QA-S4-02 e manter o token do tutor.",
+    "entrada": "GET /tipos-evento com token do tutor.",
+    "saida": "HTTP 200; resposta e uma lista; cada item possui idTipoEvento e nmTipoEvento.",
+    "passos": [
+      ["Enviar GET /tipos-evento com o token do tutor.", "HTTP 200 e corpo em formato de lista."],
+      ["Conferir os campos dos tipos retornados.", "Cada item tem idTipoEvento numerico e nmTipoEvento preenchido."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-08",
+    "titulo": "Tutor consulta recompensas disponiveis",
+    "objetivo": "Validar a consulta do catalogo de recompensas do tutor.",
+    "precondicao": "Executar QA-S4-02 e manter o token do tutor.",
+    "entrada": "GET /recompensas com token do tutor.",
+    "saida": "HTTP 200; resposta e lista de recompensas, possivelmente vazia quando nao houver ofertas ativas.",
+    "passos": [
+      ["Enviar GET /recompensas com o token do tutor.", "HTTP 200."],
+      ["Conferir o formato da resposta.", "Corpo em formato de lista; nenhum erro de autorizacao."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-09",
+    "titulo": "Tutor agenda evento de saude em horario livre",
+    "objetivo": "Validar o agendamento de um pet com profissional e horario disponivel.",
+    "precondicao": "Executar QA-S4-02 e QA-S4-03; existir um veterinario e um horario livre na clinica de testes. Registrar antes da execucao os IDs, data e hora reais escolhidos no ambiente de teste.",
+    "entrada": "POST /eventos com idPet de QA-S4-03, idTipoEvento e idVeterinario retornados por GET /agenda/slots?data=AAAA-MM-DD, dtEvento/hrEvento do mesmo slot livre, dsObservacao=QA Sprint 4 agendamento.",
+    "saida": "HTTP 201; status=AGENDADO; idPet, idVeterinario, dtEvento, hrEvento e dsObservacao iguais aos enviados; idEvento preenchido.",
+    "passos": [
+      ["Consultar os tipos de evento e a agenda; registrar um slot realmente livre e os IDs selecionados.", "Dados controlados registrados antes do POST."],
+      ["Enviar POST /eventos com o token do tutor e os dados registrados.", "HTTP 201 e status AGENDADO com os mesmos IDs, data e hora."],
+      ["Anotar o idEvento retornado.", "idEvento numerico preenchido."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-10",
+    "titulo": "Veterinario visualiza evento atribuido",
+    "objetivo": "Validar que o evento agendado aparece para o veterinario responsavel.",
+    "precondicao": "Executar QA-S4-09; ter conta real de testes do veterinario selecionado, sem registrar senha no Azure Boards.",
+    "entrada": "GET /eventos com token do veterinario responsavel; idEvento registrado em QA-S4-09.",
+    "saida": "HTTP 200; lista contem idEvento de QA-S4-09 com status AGENDADO, idPet e data/hora iguais aos agendados.",
+    "passos": [
+      ["Autenticar a conta do veterinario responsavel e enviar GET /eventos.", "HTTP 200 e corpo em formato de lista."],
+      ["Localizar o idEvento anotado em QA-S4-09.", "Evento aparece com status, pet e horario esperados."]
+    ]
+  },
+  {
+    "codigo": "QA-S4-11",
+    "titulo": "Tutor cancela o agendamento de teste",
+    "objetivo": "Validar cancelamento pelo tutor e encerrar o agendamento usado no teste.",
+    "precondicao": "Executar QA-S4-09; o evento ainda deve estar AGENDADO.",
+    "entrada": "PATCH /eventos/{idEvento}/cancelar com {\"motivo\":\"Cancelamento QA Sprint 4\"}, usando o token do tutor.",
+    "saida": "HTTP 200; eventoCancelado.idEvento igual ao solicitado; status CANCELADO; motivoCancelamento=Cancelamento QA Sprint 4; novoEvento=null.",
+    "passos": [
+      ["Enviar PATCH /eventos/{idEvento}/cancelar com o motivo definido.", "HTTP 200 e eventoCancelado com status CANCELADO."],
+      ["Consultar GET /eventos/{idEvento} com o token do tutor.", "Persistem status CANCELADO e o motivo informado."]
+    ]
+  }
+]

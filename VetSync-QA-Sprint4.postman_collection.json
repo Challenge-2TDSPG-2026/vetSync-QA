@@ -1,0 +1,112 @@
+{
+  "info": {
+    "name": "VetSync - Testes automatizados - Sprint 4",
+    "description": "Coleção de testes automatizados da API Java do VetSync para a Sprint 4.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://app-vetsync-rm563197.azurewebsites.net",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Disponibilidade da API",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/actuator/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Aplicação disponível', function () { pm.expect(pm.response.json().status).to.eql('UP'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Validação do login",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"\",\"senha\":\"\"}"
+        },
+        "url": "{{base_url}}/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login vazio rejeitado com HTTP 400', function () { pm.response.to.have.status(400); });",
+              "pm.test('Token não retornado', function () { var body = pm.response.text(); pm.expect(body).not.to.match(/\\\"token\\\"\\s*:/); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Proteção dos dados dos pets",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/pets"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Acesso sem token rejeitado com HTTP 401', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Proteção dos dados da sessão",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Acesso sem token rejeitado com HTTP 401', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
